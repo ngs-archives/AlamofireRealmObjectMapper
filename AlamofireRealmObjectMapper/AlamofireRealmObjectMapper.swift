@@ -34,7 +34,7 @@ import RealmSwift
 
 extension Request {
 
-    public static func RealmObjectMapperSerializer<T where T: Mappable, T: Object>(keyPath: String?, mapToObject object: T? = nil) -> ResponseSerializer<T, NSError> {
+    public static func RealmObjectMapperSerializer<T: Mappable>(keyPath: String?, mapToObject object: T? = nil) -> ResponseSerializer<T, NSError> {
         return ResponseSerializer { request, response, data, error in
             guard error == nil else {
                 return .Failure(error!)
@@ -59,15 +59,18 @@ extension Request {
             let realm = try! Realm()
             if let object = object {
                 Mapper<T>().map(JSONToMap, toObject: object)
-                try! realm.write {
-                    realm.add(object as! Object, update: true)
+                if let realmObject = object as? Object {
+                    try! realm.write {
+                        realm.add(realmObject, update: true)
+                    }
                 }
                 return .Success(object)
             } else if let parsedObject = Mapper<T>().map(JSONToMap) {
-                let realmObject = parsedObject as! Object
-                let shouldUpdate = realmObject.dynamicType.primaryKey()?.isEmpty ?? true == false
-                try! realm.write {
-                    realm.add(realmObject, update: shouldUpdate)
+                if let realmObject = parsedObject as? Object {
+                    let shouldUpdate = realmObject.dynamicType.primaryKey()?.isEmpty ?? true == false
+                    try! realm.write {
+                        realm.add(realmObject, update: shouldUpdate)
+                    }
                 }
                 return .Success(parsedObject)
             }
@@ -89,7 +92,7 @@ extension Request {
      - returns: The request.
      */
 
-    public func responseRealmObject<T where T: Mappable, T: Object>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, mapToObject object: T? = nil, completionHandler: Response<T, NSError> -> Void) -> Self {
+    public func responseRealmObject<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, mapToObject object: T? = nil, completionHandler: Response<T, NSError> -> Void) -> Self {
         return response(queue: queue, responseSerializer: Request.RealmObjectMapperSerializer(keyPath, mapToObject: object), completionHandler: completionHandler)
     }
 
@@ -119,9 +122,10 @@ extension Request {
             if let parsedObject = Mapper<T>().mapArray(JSONToMap) {
                 try! realm.write {
                     parsedObject.forEach {
-                        let realmObject = $0 as! Object
-                        let shouldUpdate = realmObject.dynamicType.primaryKey()?.isEmpty ?? true == false
-                        realm.add(realmObject, update: shouldUpdate)
+                        if let realmObject = $0 as? Object {
+                            let shouldUpdate = realmObject.dynamicType.primaryKey()?.isEmpty ?? true == false
+                            realm.add(realmObject, update: shouldUpdate)
+                        }
                     }
                 }
                 return .Success(parsedObject)
@@ -141,7 +145,7 @@ extension Request {
 
      - returns: The request.
      */
-    public func responseRealmArray<T where T: Mappable, T: Object>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, completionHandler: Response<[T], NSError> -> Void) -> Self {
+    public func responseRealmArray<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, completionHandler: Response<[T], NSError> -> Void) -> Self {
         return response(queue: queue, responseSerializer: Request.RealmObjectMapperArraySerializer(keyPath), completionHandler: completionHandler)
     }
 }
