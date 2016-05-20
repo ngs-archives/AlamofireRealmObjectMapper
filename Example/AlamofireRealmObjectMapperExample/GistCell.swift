@@ -32,7 +32,7 @@ class GistCell: UITableViewCell {
             } else {
                 textLabel?.text = "<Untitled>"
             }
-            if let date = gist?.updatedAt {
+            if let date = gist?.createdAt {
                 detailTextLabel?.text = dateFormatter.stringFromDate(date)
             } else {
                 detailTextLabel?.text = ""

@@ -32,6 +32,15 @@ import Alamofire
 import ObjectMapper
 import RealmSwift
 
+extension Object {
+    var primaryKey: AnyObject? {
+        if let pk = self.dynamicType.primaryKey() {
+            return self[pk]
+        }
+        return nil
+    }
+}
+
 extension Request {
 
     public static func RealmObjectMapperSerializer<T: Mappable>(keyPath: String?, mapToObject object: T? = nil) -> ResponseSerializer<T, NSError> {
@@ -67,9 +76,8 @@ extension Request {
                 return .Success(object)
             } else if let parsedObject = Mapper<T>().map(JSONToMap) {
                 if let realmObject = parsedObject as? Object {
-                    let shouldUpdate = realmObject.dynamicType.primaryKey()?.isEmpty ?? true == false
                     try! realm.write {
-                        realm.add(realmObject, update: shouldUpdate)
+                        realm.add(realmObject, update: realmObject.primaryKey != nil)
                     }
                 }
                 return .Success(parsedObject)
@@ -123,8 +131,7 @@ extension Request {
                 try! realm.write {
                     parsedObject.forEach {
                         if let realmObject = $0 as? Object {
-                            let shouldUpdate = realmObject.dynamicType.primaryKey()?.isEmpty ?? true == false
-                            realm.add(realmObject, update: shouldUpdate)
+                            realm.add(realmObject, update: realmObject.primaryKey != nil)
                         }
                     }
                 }

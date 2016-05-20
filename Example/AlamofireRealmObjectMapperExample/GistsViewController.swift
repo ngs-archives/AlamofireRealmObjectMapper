@@ -12,7 +12,7 @@ import SafariServices
 
 class GistsViewController: UITableViewController {
     let realm = try! Realm()
-    let results = try! Realm().objects(Gist.self)
+    let results = try! Realm().objects(Gist.self).sorted("createdAt", ascending: false)
     var notificationToken: NotificationToken?
     let client = GistAPIClient()
 
@@ -99,6 +99,7 @@ class GistsViewController: UITableViewController {
     override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         let url = results[indexPath.row].htmlUrl
         let vc = SFSafariViewController(URL: NSURL(string: url)!)
+        vc.hidesBottomBarWhenPushed = true
         self.navigationController?.pushViewController(vc, animated: true)
     }
 

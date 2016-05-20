@@ -94,6 +94,7 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
     override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         let url = self.fetchedResultsController.objectAtIndexPath(indexPath)!.htmlUrl
         let vc = SFSafariViewController(URL: NSURL(string: url)!)
+        vc.hidesBottomBarWhenPushed = true
         self.navigationController?.pushViewController(vc, animated: true)
     }
 
