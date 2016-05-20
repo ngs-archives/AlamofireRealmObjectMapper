@@ -33,7 +33,7 @@ import ObjectMapper
 import RealmSwift
 
 extension Object {
-    var primaryKey: AnyObject? {
+    public var primaryKey: AnyObject? {
         if let pk = self.dynamicType.primaryKey() {
             return self[pk]
         }
@@ -41,9 +41,23 @@ extension Object {
     }
 }
 
+public struct RealmObjectMapperResult<T> {
+    public let primaryKey: AnyObject?
+    let json: AnyObject?
+}
+
+extension RealmObjectMapperResult where T: Object {
+    public var realmObject: T? {
+        if let pk = primaryKey {
+            return try! Realm().objectForPrimaryKey(T.self, key: pk)
+        }
+        return nil
+    }
+}
+
 extension Request {
 
-    public static func RealmObjectMapperSerializer<T: Mappable>(keyPath: String?, mapToObject object: T? = nil) -> ResponseSerializer<T, NSError> {
+    public static func RealmObjectMapperSerializer<T: Mappable>(keyPath: String?, mapToObject object: T? = nil) -> ResponseSerializer<RealmObjectMapperResult<T>, NSError> {
         return ResponseSerializer { request, response, data, error in
             guard error == nil else {
                 return .Failure(error!)
@@ -68,19 +82,23 @@ extension Request {
             let realm = try! Realm()
             if let object = object {
                 Mapper<T>().map(JSONToMap, toObject: object)
+                var pk: AnyObject?
                 if let realmObject = object as? Object {
                     try! realm.write {
                         realm.add(realmObject, update: true)
+                        pk = realmObject.primaryKey
                     }
                 }
-                return .Success(object)
+                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap))
             } else if let parsedObject = Mapper<T>().map(JSONToMap) {
+                var pk: AnyObject?
                 if let realmObject = parsedObject as? Object {
                     try! realm.write {
-                        realm.add(realmObject, update: realmObject.primaryKey != nil)
+                        pk = realmObject.primaryKey
+                        realm.add(realmObject, update: pk != nil)
                     }
                 }
-                return .Success(parsedObject)
+                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap))
             }
 
             let failureReason = "ObjectMapper failed to serialize response."
@@ -100,11 +118,11 @@ extension Request {
      - returns: The request.
      */
 
-    public func responseRealmObject<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, mapToObject object: T? = nil, completionHandler: Response<T, NSError> -> Void) -> Self {
+    public func responseRealmObject<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, mapToObject object: T? = nil, completionHandler: Response<RealmObjectMapperResult<T>, NSError> -> Void) -> Self {
         return response(queue: queue, responseSerializer: Request.RealmObjectMapperSerializer(keyPath, mapToObject: object), completionHandler: completionHandler)
     }
 
-    public static func RealmObjectMapperArraySerializer<T: Mappable>(keyPath: String?) -> ResponseSerializer<[T], NSError> {
+    public static func RealmObjectMapperArraySerializer<T: Mappable>(keyPath: String?) -> ResponseSerializer<[RealmObjectMapperResult<T>], NSError> {
         return ResponseSerializer { request, response, data, error in
             guard error == nil else {
                 return .Failure(error!)
@@ -128,14 +146,18 @@ extension Request {
 
             let realm = try! Realm()
             if let parsedObject = Mapper<T>().mapArray(JSONToMap) {
+                var results = [RealmObjectMapperResult<T>]()
                 try! realm.write {
-                    parsedObject.forEach {
-                        if let realmObject = $0 as? Object {
-                            realm.add(realmObject, update: realmObject.primaryKey != nil)
+                    results = parsedObject.enumerate().map {
+                        var pk: AnyObject?
+                        if let realmObject = $0.element as? Object {
+                            pk = realmObject.primaryKey
+                            realm.add(realmObject, update: pk != nil)
                         }
+                        return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap?[$0.index])
                     }
                 }
-                return .Success(parsedObject)
+                return .Success(results)
             }
             let failureReason = "ObjectMapper failed to serialize response."
             let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
@@ -152,7 +174,7 @@ extension Request {
 
      - returns: The request.
      */
-    public func responseRealmArray<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, completionHandler: Response<[T], NSError> -> Void) -> Self {
+    public func responseRealmArray<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, completionHandler: Response<[RealmObjectMapperResult<T>], NSError> -> Void) -> Self {
         return response(queue: queue, responseSerializer: Request.RealmObjectMapperArraySerializer(keyPath), completionHandler: completionHandler)
     }
 }

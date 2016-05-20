@@ -25,7 +25,7 @@ class GistAPIClient {
         let URL = NSURL(string: "https://api.github.com/gists/public?page=\(currentPage)&per_page=\(perPage)")!
         let req = Alamofire.request(.GET, URL)
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-        req.responseRealmArray { (response: Response<[Gist], NSError>) in
+        req.responseRealmArray { (response: Response<[RealmObjectMapperResult<Gist>], NSError>) in
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
             completionHandler()
         }
