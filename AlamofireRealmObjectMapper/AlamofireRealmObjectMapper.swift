@@ -43,7 +43,8 @@ extension Object {
 
 public struct RealmObjectMapperResult<T> {
     public let primaryKey: AnyObject?
-    let json: AnyObject?
+    public let json: AnyObject!
+    public let object: T!
 }
 
 extension RealmObjectMapperResult where T: Object {
@@ -89,7 +90,7 @@ extension Request {
                         pk = realmObject.primaryKey
                     }
                 }
-                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap))
+                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap, object: object))
             } else if let parsedObject = Mapper<T>().map(JSONToMap) {
                 var pk: AnyObject?
                 if let realmObject = parsedObject as? Object {
@@ -98,7 +99,7 @@ extension Request {
                         realm.add(realmObject, update: pk != nil)
                     }
                 }
-                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap))
+                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap, object: parsedObject))
             }
 
             let failureReason = "ObjectMapper failed to serialize response."
@@ -150,11 +151,12 @@ extension Request {
                 try! realm.write {
                     results = parsedObject.enumerate().map {
                         var pk: AnyObject?
-                        if let realmObject = $0.element as? Object {
+                        let object = $0.element
+                        if let realmObject = object as? Object {
                             pk = realmObject.primaryKey
                             realm.add(realmObject, update: pk != nil)
                         }
-                        return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap?[$0.index])
+                        return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap?[$0.index], object: object)
                     }
                 }
                 return .Success(results)
