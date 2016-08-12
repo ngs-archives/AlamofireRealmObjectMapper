@@ -147,17 +147,17 @@ extension Request {
 
             let realm = try! Realm()
             if let parsedObject = Mapper<T>().mapArray(JSONToMap) {
-                var results = [RealmObjectMapperResult<T>]()
-                try! realm.write {
-                    results = parsedObject.enumerate().map {
-                        var pk: AnyObject?
-                        let object = $0.element
-                        if let realmObject = object as? Object {
+                let results = try! parsedObject.enumerate().map { res -> RealmObjectMapperResult<T> in
+                    let object = res.element
+                    var pk: AnyObject?
+
+                    if let realmObject = object as? Object {
+                        try! realm.write {
                             pk = realmObject.primaryKey
                             realm.add(realmObject, update: pk != nil)
                         }
-                        return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap?[$0.index], object: object)
                     }
+                    return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap, object: object)
                 }
                 return .Success(results)
             }
