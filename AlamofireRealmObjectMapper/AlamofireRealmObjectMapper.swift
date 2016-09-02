@@ -145,21 +145,23 @@ extension Request {
                 JSONToMap = result.value
             }
 
-            let realm = try! Realm()
             if let parsedObject = Mapper<T>().mapArray(JSONToMap) {
-                var results = [RealmObjectMapperResult<T>]()
+                let realm = try! Realm()
+                var results: [RealmObjectMapperResult<T>]? = nil
                 try! realm.write {
-                    results = parsedObject.enumerate().map {
+                    results = try! parsedObject.enumerate().map { res -> RealmObjectMapperResult<T> in
+                        let object = res.element
                         var pk: AnyObject?
-                        let object = $0.element
+
                         if let realmObject = object as? Object {
                             pk = realmObject.primaryKey
                             realm.add(realmObject, update: pk != nil)
                         }
-                        return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap?[$0.index], object: object)
+
+                        return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap, object: object)
                     }
                 }
-                return .Success(results)
+                return .Success(results!)
             }
             let failureReason = "ObjectMapper failed to serialize response."
             let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
