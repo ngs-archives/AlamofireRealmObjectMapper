@@ -25,7 +25,7 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
         self.title = "Sectioned Public Gists"
 
         self.refreshControl = UIRefreshControl()
-        self.refreshControl?.addTarget(self, action: #selector(self.dynamicType.loadGists), forControlEvents: .ValueChanged)
+        self.refreshControl?.addTarget(self, action: #selector(type(of: self).loadGists), for: .valueChanged)
 
         let predicate = NSPredicate(value: true)
         let fetchRequest = FetchRequest<Gist>(realm: realm, predicate: predicate)
@@ -43,10 +43,10 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.tableView.registerClass(GistCell.self, forCellReuseIdentifier: GistCell.cellIdentifier)
+        self.tableView.register(GistCell.self, forCellReuseIdentifier: GistCell.cellIdentifier)
     }
 
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.fetchedResultsController.performFetch()
         self.loadGists()
@@ -54,7 +54,7 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
 
     // Scroll view delegate
 
-    override func scrollViewDidScroll(scrollView: UIScrollView) {
+    override func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if scrollView.contentOffset.y + scrollView.bounds.height >= scrollView.contentSize.height {
             self.loadGists(true)
         }
@@ -62,7 +62,7 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
 
     // Table view delegate
 
-    override func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
+    override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if indexPath.row >= client.perPage * client.currentPage - 1 {
             self.loadGists(true)
         }
@@ -70,72 +70,72 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
     
     // MARK: - Table view data source
 
-    override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    override func numberOfSections(in tableView: UITableView) -> Int {
         return self.fetchedResultsController.numberOfSections()
     }
 
-    override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.fetchedResultsController.numberOfRowsForSectionIndex(section)
     }
 
-    override func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         let title = self.fetchedResultsController.titleForHeaderInSection(section)
         return title
     }
 
-    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(GistCell.cellIdentifier, forIndexPath: indexPath) as! GistCell
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: GistCell.cellIdentifier, for: indexPath) as! GistCell
         cell.gist = self.fetchedResultsController.objectAtIndexPath(indexPath)
         return cell
     }
 
     // Table view delegate
 
-    override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let url = self.fetchedResultsController.objectAtIndexPath(indexPath)!.htmlUrl
-        let vc = SFSafariViewController(URL: NSURL(string: url)!)
+        let vc = SFSafariViewController(URL: URL(string: url)!)
         vc.hidesBottomBarWhenPushed = true
         self.navigationController?.pushViewController(vc, animated: true)
     }
 
     // FetchedResultsControllerDelegate
 
-    func controllerDidChangeContent<T : Object>(controller: FetchedResultsController<T>) {
+    func controllerDidChangeContent<T : Object>(_ controller: FetchedResultsController<T>) {
         self.tableView.endUpdates()
     }
 
-    func controllerWillChangeContent<T : Object>(controller: FetchedResultsController<T>) {
+    func controllerWillChangeContent<T : Object>(_ controller: FetchedResultsController<T>) {
         self.tableView.beginUpdates()
     }
 
-    func controllerDidChangeSection<T : Object>(controller: FetchedResultsController<T>, section: FetchResultsSectionInfo<T>, sectionIndex: UInt, changeType: NSFetchedResultsChangeType) {
+    func controllerDidChangeSection<T : Object>(_ controller: FetchedResultsController<T>, section: FetchResultsSectionInfo<T>, sectionIndex: UInt, changeType: NSFetchedResultsChangeType) {
         if changeType == NSFetchedResultsChangeType.Insert {
-            let indexSet = NSIndexSet(index: Int(sectionIndex))
-            tableView.insertSections(indexSet, withRowAnimation: UITableViewRowAnimation.Fade)
+            let indexSet = IndexSet(integer: Int(sectionIndex))
+            tableView.insertSections(indexSet, with: UITableViewRowAnimation.fade)
         }
         else if changeType == NSFetchedResultsChangeType.Delete {
-            let indexSet = NSIndexSet(index: Int(sectionIndex))
-            tableView.deleteSections(indexSet, withRowAnimation: UITableViewRowAnimation.Fade)
+            let indexSet = IndexSet(integer: Int(sectionIndex))
+            tableView.deleteSections(indexSet, with: UITableViewRowAnimation.fade)
         }
     }
 
-    func controllerDidChangeObject<T : Object>(controller: FetchedResultsController<T>, anObject: SafeObject<T>, indexPath: NSIndexPath?, changeType: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+    func controllerDidChangeObject<T : Object>(_ controller: FetchedResultsController<T>, anObject: SafeObject<T>, indexPath: IndexPath?, changeType: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         switch changeType {
         case .Insert:
-            tableView.insertRowsAtIndexPaths([newIndexPath!], withRowAnimation: UITableViewRowAnimation.Fade)
+            tableView.insertRows(at: [newIndexPath!], with: UITableViewRowAnimation.fade)
         case .Delete:
-            tableView.deleteRowsAtIndexPaths([indexPath!], withRowAnimation: UITableViewRowAnimation.Fade)
+            tableView.deleteRows(at: [indexPath!], with: UITableViewRowAnimation.fade)
         case .Update:
-            tableView.reloadRowsAtIndexPaths([indexPath!], withRowAnimation: UITableViewRowAnimation.Fade)
+            tableView.reloadRows(at: [indexPath!], with: UITableViewRowAnimation.fade)
         case .Move:
-            tableView.deleteRowsAtIndexPaths([indexPath!], withRowAnimation: UITableViewRowAnimation.Fade)
-            tableView.insertRowsAtIndexPaths([newIndexPath!], withRowAnimation: UITableViewRowAnimation.Fade)
+            tableView.deleteRows(at: [indexPath!], with: UITableViewRowAnimation.fade)
+            tableView.insertRows(at: [newIndexPath!], with: UITableViewRowAnimation.fade)
         }
     }
 
     // Actions
 
-    func loadGists(more: Bool = false) {
+    func loadGists(_ more: Bool = false) {
         self.client.load(more) {
             self.refreshControl?.endRefreshing()
         }

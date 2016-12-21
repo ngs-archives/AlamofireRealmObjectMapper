@@ -13,12 +13,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
 
     var window: UIWindow?
 
-    func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
-        window = UIWindow(frame: UIScreen.mainScreen().bounds)
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        window = UIWindow(frame: UIScreen.main.bounds)
         let tabBarController = UITabBarController()
         tabBarController.viewControllers = [
-            UINavigationController(rootViewController: GistsViewController(style: .Plain)),
-            UINavigationController(rootViewController: SectionedGistsViewController(style: .Plain))
+            UINavigationController(rootViewController: GistsViewController(style: .plain)),
+            UINavigationController(rootViewController: SectionedGistsViewController(style: .plain))
         ]
         window?.rootViewController = tabBarController
         window?.makeKeyAndVisible()

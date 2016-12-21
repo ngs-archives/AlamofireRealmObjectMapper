@@ -16,8 +16,8 @@ class Gist: Object, Mappable {
     dynamic var id: String = ""
     dynamic var descriptionText: String = ""
     dynamic var isPublic: Bool = false
-    dynamic var updatedAt: NSDate?
-    dynamic var createdAt: NSDate?
+    dynamic var updatedAt: Date?
+    dynamic var createdAt: Date?
     dynamic var dateHour: String = ""
 
     // MARK: - Initialization
@@ -45,7 +45,7 @@ class Gist: Object, Mappable {
         return "id"
     }
 
-    func mapping(map: Map) {
+    func mapping(_ map: Map) {
         htmlUrl <- map["html_url"]
         id <- map["id"]
         descriptionText <- map["description"]
@@ -59,25 +59,25 @@ class Gist: Object, Mappable {
 class DateHourTransform: TransformType {
     typealias Object = String
     typealias JSON = String
-    let fromDateFormatter = NSDateFormatter()
-    let toDateFormatter = NSDateFormatter()
+    let fromDateFormatter = DateFormatter()
+    let toDateFormatter = DateFormatter()
 
     init() {
-        fromDateFormatter.locale = NSLocale(localeIdentifier: "en_US_POSIX")
+        fromDateFormatter.locale = Locale(identifier: "en_US_POSIX")
         fromDateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
-        toDateFormatter.locale = NSLocale(localeIdentifier: "en_US_POSIX")
+        toDateFormatter.locale = Locale(identifier: "en_US_POSIX")
         toDateFormatter.dateFormat = "yyyy/MM/dd HH:00"
     }
 
-    func transformFromJSON(value: AnyObject?) -> Object? {
+    func transformFromJSON(_ value: AnyObject?) -> Object? {
         if let value = value as? String
-            , date = fromDateFormatter.dateFromString(value) {
-            return toDateFormatter.stringFromDate(date)
+            , let date = fromDateFormatter.date(from: value) {
+            return toDateFormatter.string(from: date)
         }
         return nil
     }
 
-    func transformToJSON(value: Object?) -> JSON? {
+    func transformToJSON(_ value: Object?) -> JSON? {
         return ""
     }
 }

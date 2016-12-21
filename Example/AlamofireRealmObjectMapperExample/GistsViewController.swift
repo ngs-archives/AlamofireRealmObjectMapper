@@ -24,7 +24,7 @@ class GistsViewController: UITableViewController {
         self.title = "Public Gists"
 
         self.refreshControl = UIRefreshControl()
-        self.refreshControl?.addTarget(self, action: #selector(self.dynamicType.loadGists), forControlEvents: .ValueChanged)
+        self.refreshControl?.addTarget(self, action: #selector(type(of: self).loadGists), for: .valueChanged)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -34,7 +34,7 @@ class GistsViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.tableView.registerClass(GistCell.self, forCellReuseIdentifier: GistCell.cellIdentifier)
+        self.tableView.register(GistCell.self, forCellReuseIdentifier: GistCell.cellIdentifier)
 
         // Set results notification block
         self.notificationToken = self.results.addNotificationBlock({ (changes: RealmCollectionChange) in
@@ -63,14 +63,14 @@ class GistsViewController: UITableViewController {
         })
     }
 
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.loadGists()
     }
 
     // Scroll view delegate
 
-    override func scrollViewDidScroll(scrollView: UIScrollView) {
+    override func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if scrollView.contentOffset.y + scrollView.bounds.height >= scrollView.contentSize.height {
             self.loadGists(true)
         }
@@ -78,34 +78,34 @@ class GistsViewController: UITableViewController {
 
     // Table view data source
 
-    override func tableView(tableView: UITableView, willDisplayCell cell: UITableViewCell, forRowAtIndexPath indexPath: NSIndexPath) {
+    override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if indexPath.row >= client.perPage * client.currentPage - 1 {
             self.loadGists(true)
         }
     }
 
-    override func tableView(tableView: UITableView?, numberOfRowsInSection section: Int) -> Int {
+    override func tableView(_ tableView: UITableView?, numberOfRowsInSection section: Int) -> Int {
         return results.count
     }
 
-    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(GistCell.cellIdentifier, forIndexPath: indexPath) as! GistCell
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: GistCell.cellIdentifier, for: indexPath) as! GistCell
         cell.gist = results[indexPath.row]
         return cell
     }
 
     // Table view delegate
 
-    override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let url = results[indexPath.row].htmlUrl
-        let vc = SFSafariViewController(URL: NSURL(string: url)!)
+        let vc = SFSafariViewController(URL: URL(string: url)!)
         vc.hidesBottomBarWhenPushed = true
         self.navigationController?.pushViewController(vc, animated: true)
     }
 
     // Actions
 
-    func loadGists(more: Bool = false) {
+    func loadGists(_ more: Bool = false) {
         self.client.load(more) {
             self.refreshControl?.endRefreshing()
         }

@@ -15,7 +15,7 @@ class GistAPIClient {
     var isLoading = false
     var currentPage = 1
 
-    func load(more: Bool = false, completionHandler: () -> ()) {
+    func load(_ more: Bool = false, completionHandler: @escaping () -> ()) {
         if isLoading { return }
         if more {
             currentPage += 1
