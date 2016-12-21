@@ -1,8 +1,10 @@
 source 'https://github.com/CocoaPods/Specs.git'
 use_frameworks!
 
-pod 'AlamofireRealmObjectMapper', :path => '../'
-pod 'Alamofire'
-pod 'ObjectMapper'
-pod 'RealmSwift'
-pod 'SwiftFetchedResultsController'
+target 'AlamofireRealmObjectMapperExample' do
+  pod 'AlamofireRealmObjectMapper', :path => '../'
+  pod 'Alamofire'
+  pod 'ObjectMapper'
+  pod 'RealmSwift'
+  pod 'SwiftFetchedResultsController'
+end

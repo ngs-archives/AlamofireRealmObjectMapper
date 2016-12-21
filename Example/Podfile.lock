@@ -25,7 +25,7 @@ DEPENDENCIES:
 
 EXTERNAL SOURCES:
   AlamofireRealmObjectMapper:
-    :path: "../"
+    :path: ../
 
 SPEC CHECKSUMS:
   Alamofire: c19a627cefd6a95f840401c49ab1f124e07f54ee
@@ -36,4 +36,6 @@ SPEC CHECKSUMS:
   RealmSwift: daaa1789eb581f2f8c2a05a25f463a6f70df5a5f
   SwiftFetchedResultsController: 5ba43769b1198195e087f37536c99611505da5ec
 
-COCOAPODS: 0.39.0
+PODFILE CHECKSUM: 2e536a5b1a1d05a0d9e8f67a611efd3a5a50cde8
+
+COCOAPODS: 1.1.1
