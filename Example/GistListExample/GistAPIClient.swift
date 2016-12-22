@@ -9,24 +9,25 @@
 import Alamofire
 import AlamofireRealmObjectMapper
 import RealmSwift
+import UIKit
 
 class GistAPIClient {
     let perPage = 20
     var isLoading = false
     var currentPage = 1
 
-    func load(more: Bool = false, completionHandler: () -> ()) {
+    func load(_ more: Bool = false, completionHandler: @escaping () -> ()) {
         if isLoading { return }
         if more {
             currentPage += 1
         } else {
             currentPage = 1
         }
-        let URL = NSURL(string: "https://api.github.com/gists/public?page=\(currentPage)&per_page=\(perPage)")!
-        let req = Alamofire.request(.GET, URL)
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-        req.responseRealmArray { (response: Response<[RealmObjectMapperResult<Gist>], NSError>) in
-            UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+        let url = URL(string: "https://api.github.com/gists/public?page=\(currentPage)&per_page=\(perPage)")!
+        let req = Alamofire.request(url)
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
+        req.responseRealmArray { (response: DataResponse<[Gist]>) in
+            UIApplication.shared.isNetworkActivityIndicatorVisible = false
             completionHandler()
         }
     }

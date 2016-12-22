@@ -9,7 +9,7 @@
 
 Pod::Spec.new do |s|
   s.name             = "AlamofireRealmObjectMapper"
-  s.version          = "0.0.1"
+  s.version          = "0.0.2"
   s.summary          = "Alamofire ressponse handler for Realm objects with ObjectMapper"
   s.homepage         = "https://github.com/ngs/AlamofireRealmObjectMapper"
   # s.screenshots     = "www.example.com/screenshots_1", "www.example.com/screenshots_2"
@@ -20,9 +20,9 @@ Pod::Spec.new do |s|
   s.platform     = :ios, '8.0'
   s.requires_arc = true
 
-  s.dependency 'Alamofire', '~> 3.4'
-  s.dependency 'ObjectMapper', '~> 1.3'
-  s.dependency 'RealmSwift',   '>=0.99.1'
+  s.dependency 'Alamofire', '~> 4.2'
+  s.dependency 'ObjectMapper', '~> 2.2'
+  s.dependency 'RealmSwift',   '~> 2.1'
 
   s.source_files = 'AlamofireRealmObjectMapper/AlamofireRealmObjectMapper.swift'
 

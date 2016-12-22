@@ -10,15 +10,15 @@ import UIKit
 
 class GistCell: UITableViewCell {
     static let cellIdentifier = "GistCell"
-    lazy var dateFormatter: NSDateFormatter = {
-        let fmt = NSDateFormatter()
-        fmt.dateStyle = .MediumStyle
-        fmt.timeStyle = .MediumStyle
+    lazy var dateFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateStyle = .medium
+        fmt.timeStyle = .medium
         return fmt
     }()
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String!) {
-        super.init(style: .Subtitle, reuseIdentifier: reuseIdentifier)
+        super.init(style: .subtitle, reuseIdentifier: reuseIdentifier)
     }
 
     required init(coder: NSCoder) {
@@ -27,13 +27,13 @@ class GistCell: UITableViewCell {
 
     var gist: Gist? = nil {
         didSet {
-            if let text = gist?.descriptionText where !text.isEmpty {
+            if let text = gist?.descriptionText, !text.isEmpty {
                 textLabel?.text = text
             } else {
                 textLabel?.text = "<Untitled>"
             }
             if let date = gist?.createdAt {
-                detailTextLabel?.text = dateFormatter.stringFromDate(date)
+                detailTextLabel?.text = dateFormatter.string(from: date as Date)
             } else {
                 detailTextLabel?.text = ""
             }
