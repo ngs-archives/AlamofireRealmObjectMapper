@@ -9,6 +9,7 @@
 import Alamofire
 import AlamofireRealmObjectMapper
 import RealmSwift
+import UIKit
 
 class GistAPIClient {
     let perPage = 20

@@ -1,0 +1,6 @@
+github "Alamofire/Alamofire" "4.2.0"
+github "Hearst-DD/ObjectMapper" "2.2.2"
+github "realm/realm-cocoa" "v2.1.2"
+github "Roobiq/RealmUtilities" "v0.4.2"
+github "Roobiq/RBQSafeRealmObject" "v1.1.2"
+github "Roobiq/RBQFetchedResultsController" "v5.0.1"
