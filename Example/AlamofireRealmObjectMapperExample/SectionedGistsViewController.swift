@@ -10,8 +10,10 @@ import UIKit
 import RealmSwift
 import SafariServices
 import SwiftFetchedResultsController
+import SafeRealmObject
 
 class SectionedGistsViewController: UITableViewController, FetchedResultsControllerDelegate {
+
     let realm = try! Realm()
     var fetchedResultsController: FetchedResultsController<Gist>!
 
@@ -48,7 +50,7 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.fetchedResultsController.performFetch()
+        _ = self.fetchedResultsController.performFetch()
         self.loadGists()
     }
 
@@ -93,41 +95,41 @@ class SectionedGistsViewController: UITableViewController, FetchedResultsControl
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let url = self.fetchedResultsController.objectAtIndexPath(indexPath)!.htmlUrl
-        let vc = SFSafariViewController(URL: URL(string: url)!)
+        let vc = SFSafariViewController(url: URL(string: url)!)
         vc.hidesBottomBarWhenPushed = true
         self.navigationController?.pushViewController(vc, animated: true)
     }
 
     // FetchedResultsControllerDelegate
 
-    func controllerDidChangeContent<T : Object>(_ controller: FetchedResultsController<T>) {
+    func controllerDidChangeContent<T: Object>(_ controller: FetchedResultsController<T>) {
         self.tableView.endUpdates()
     }
 
-    func controllerWillChangeContent<T : Object>(_ controller: FetchedResultsController<T>) {
+    func controllerWillChangeContent<T: Object>(_ controller: FetchedResultsController<T>) {
         self.tableView.beginUpdates()
     }
 
-    func controllerDidChangeSection<T : Object>(_ controller: FetchedResultsController<T>, section: FetchResultsSectionInfo<T>, sectionIndex: UInt, changeType: NSFetchedResultsChangeType) {
-        if changeType == NSFetchedResultsChangeType.Insert {
+    public func controllerDidChangeSection<T : Object>(_ controller: FetchedResultsController<T>, section: FetchResultsSectionInfo<T>, sectionIndex: UInt, changeType: NSFetchedResultsChangeType) {
+        if changeType == .insert {
             let indexSet = IndexSet(integer: Int(sectionIndex))
-            tableView.insertSections(indexSet, with: UITableViewRowAnimation.fade)
+            tableView.insertSections(indexSet, with: .fade)
         }
-        else if changeType == NSFetchedResultsChangeType.Delete {
+        else if changeType == .delete {
             let indexSet = IndexSet(integer: Int(sectionIndex))
-            tableView.deleteSections(indexSet, with: UITableViewRowAnimation.fade)
+            tableView.deleteSections(indexSet, with: .fade)
         }
     }
 
-    func controllerDidChangeObject<T : Object>(_ controller: FetchedResultsController<T>, anObject: SafeObject<T>, indexPath: IndexPath?, changeType: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        switch changeType {
-        case .Insert:
+    public func controller<T : Object>(_ controller: FetchedResultsController<T>, didChangeObject anObject: SafeObject<T>, atIndexPath indexPath: IndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        switch type {
+        case .insert:
             tableView.insertRows(at: [newIndexPath!], with: UITableViewRowAnimation.fade)
-        case .Delete:
+        case .delete:
             tableView.deleteRows(at: [indexPath!], with: UITableViewRowAnimation.fade)
-        case .Update:
+        case .update:
             tableView.reloadRows(at: [indexPath!], with: UITableViewRowAnimation.fade)
-        case .Move:
+        case .move:
             tableView.deleteRows(at: [indexPath!], with: UITableViewRowAnimation.fade)
             tableView.insertRows(at: [newIndexPath!], with: UITableViewRowAnimation.fade)
         }

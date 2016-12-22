@@ -12,7 +12,7 @@ import SafariServices
 
 class GistsViewController: UITableViewController {
     let realm = try! Realm()
-    let results = try! Realm().objects(Gist.self).sorted("createdAt", ascending: false)
+    let results = try! Realm().objects(Gist.self).sorted(byProperty: "createdAt", ascending: false)
     var notificationToken: NotificationToken?
     let client = GistAPIClient()
 
@@ -39,22 +39,26 @@ class GistsViewController: UITableViewController {
         // Set results notification block
         self.notificationToken = self.results.addNotificationBlock({ (changes: RealmCollectionChange) in
             switch changes {
-            case .Initial:
+            case .initial:
                 // Results are now populated and can be accessed without blocking the UI
                 self.tableView.reloadData()
                 break
-            case .Update(_, let deletions, let insertions, let modifications):
+            case .update(_, let deletions, let insertions, let modifications):
                 // Query results have changed, so apply them to the TableView
                 self.tableView.beginUpdates()
-                self.tableView.insertRowsAtIndexPaths(insertions.map { NSIndexPath(forRow: $0, inSection: 0) },
-                    withRowAnimation: .Automatic)
-                self.tableView.deleteRowsAtIndexPaths(deletions.map { NSIndexPath(forRow: $0, inSection: 0) },
-                    withRowAnimation: .Automatic)
-                self.tableView.reloadRowsAtIndexPaths(modifications.map { NSIndexPath(forRow: $0, inSection: 0) },
-                    withRowAnimation: .Automatic)
+                self.tableView.insertRows(at: insertions.map {
+                    IndexPath(row: $0, section: 0)
+                }, with: .automatic)
+                    self.tableView.deleteRows(at: deletions.map {
+                        IndexPath(row: $0, section: 0)
+                        },
+                    with: .automatic)
+                    self.tableView.reloadRows(at: modifications.map {
+                        IndexPath(row: $0, section: 0) },
+                    with: .automatic)
                 self.tableView.endUpdates()
                 break
-            case .Error(let err):
+            case .error(let err):
                 // An error occurred while opening the Realm file on the background worker thread
                 fatalError("\(err)")
                 break
@@ -98,7 +102,7 @@ class GistsViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let url = results[indexPath.row].htmlUrl
-        let vc = SFSafariViewController(URL: URL(string: url)!)
+        let vc = SFSafariViewController(url: URL(string: url)!)
         vc.hidesBottomBarWhenPushed = true
         self.navigationController?.pushViewController(vc, animated: true)
     }

@@ -22,9 +22,9 @@ class Gist: Object, Mappable {
 
     // MARK: - Initialization
 
-    required init?(_ map: Map) {
+    required init?(map: Map) {
         super.init()
-        self.mapping(map)
+        self.mapping(map: map)
     }
 
     required init() {
@@ -35,7 +35,7 @@ class Gist: Object, Mappable {
         super.init(realm: realm, schema: schema)
     }
 
-    required init(value: AnyObject, schema: RLMSchema) {
+    required init(value: Any, schema: RLMSchema) {
         super.init(value: value, schema: schema)
     }
 
@@ -45,7 +45,7 @@ class Gist: Object, Mappable {
         return "id"
     }
 
-    func mapping(_ map: Map) {
+    func mapping(map: Map) {
         htmlUrl <- map["html_url"]
         id <- map["id"]
         descriptionText <- map["description"]
@@ -69,7 +69,7 @@ class DateHourTransform: TransformType {
         toDateFormatter.dateFormat = "yyyy/MM/dd HH:00"
     }
 
-    func transformFromJSON(_ value: AnyObject?) -> Object? {
+    func transformFromJSON(_ value: Any?) -> Object? {
         if let value = value as? String
             , let date = fromDateFormatter.date(from: value) {
             return toDateFormatter.string(from: date)

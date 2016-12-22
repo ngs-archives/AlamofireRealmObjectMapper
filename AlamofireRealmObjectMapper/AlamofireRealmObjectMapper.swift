@@ -1,9 +1,8 @@
 //
 //  Request.swift
-//  AlamofireRealmObjectMapper
+//  AlamofireObjectMapper
 //
-//  Originally created by Tristan Himmelman on 2015-04-30.
-//  Created by Atsushi Nagase on 2016-05-19
+//  Created by Tristan Himmelman on 2015-04-30.
 //
 //  The MIT License (MIT)
 //
@@ -33,78 +32,92 @@ import ObjectMapper
 import RealmSwift
 
 extension Object {
-    public var primaryKey: AnyObject? {
-        if let pk = self.dynamicType.primaryKey() {
-            return self[pk]
+    public var primaryKey: Any? {
+        if let pk = type(of: self).primaryKey() {
+            return self[pk] as Any?
         }
         return nil
     }
 }
 
-public struct RealmObjectMapperResult<T> {
-    public let primaryKey: AnyObject?
-    public let json: AnyObject!
-    public let object: T!
+public struct RealmObjectMapperResult<Value> {
+    public let primaryKey: Any?
+    public let json: Any!
+    public let object: Value!
 }
 
-extension RealmObjectMapperResult where T: Object {
-    public var realmObject: T? {
+extension RealmObjectMapperResult where Value: Object {
+    public var realmObject: Value? {
         if let pk = primaryKey {
-            return try! Realm().objectForPrimaryKey(T.self, key: pk)
+            return try! Realm().object(ofType: Value.self, forPrimaryKey: pk)
         }
         return nil
     }
 }
 
-extension Request {
+extension DataRequest {
 
-    public static func RealmObjectMapperSerializer<T: Mappable>(keyPath: String?, mapToObject object: T? = nil) -> ResponseSerializer<RealmObjectMapperResult<T>, NSError> {
-        return ResponseSerializer { request, response, data, error in
+    enum ErrorCode: Int {
+        case noData = 1
+        case dataSerializationFailed = 2
+    }
+
+    internal static func newError(_ code: ErrorCode, failureReason: String) -> NSError {
+        let errorDomain = "com.alamofireobjectmapper.error"
+
+        let userInfo = [NSLocalizedFailureReasonErrorKey: failureReason]
+        let returnError = NSError(domain: errorDomain, code: code.rawValue, userInfo: userInfo)
+
+        return returnError
+    }
+
+    public static func ObjectMapperSerializer<Value: BaseMappable>(_ keyPath: String?, mapToObject object: Value? = nil, context: MapContext? = nil) -> DataResponseSerializer<Value> {
+        return DataResponseSerializer { request, response, data, error -> Result<Value> in
             guard error == nil else {
-                return .Failure(error!)
+                return .failure(error!)
             }
 
             guard let _ = data else {
                 let failureReason = "Data could not be serialized. Input data was nil."
-                let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
-                return .Failure(error)
+                let error = newError(.noData, failureReason: failureReason)
+                return .failure(error)
             }
 
-            let JSONResponseSerializer = Request.JSONResponseSerializer(options: .AllowFragments)
-            let result = JSONResponseSerializer.serializeResponse(request, response, data, error)
+            let jsonResponseSerializer = DataRequest.jsonResponseSerializer(options: .allowFragments)
+            let result = jsonResponseSerializer.serializeResponse(request, response, data, error)
 
-            let JSONToMap: AnyObject?
-            if let keyPath = keyPath where keyPath.isEmpty == false {
-                JSONToMap = result.value?.valueForKeyPath(keyPath)
+            let JSONToMap: Any?
+            if let keyPath = keyPath , keyPath.isEmpty == false {
+                JSONToMap = nil // (result.value as Any?)?.value(forKeyPath: keyPath)
             } else {
                 JSONToMap = result.value
             }
-
             let realm = try! Realm()
+
             if let object = object {
-                Mapper<T>().map(JSONToMap, toObject: object)
-                var pk: AnyObject?
+                _ = Mapper<Value>().map(JSONObject: JSONToMap, toObject: object)
+                var pk: Any?
                 if let realmObject = object as? Object {
                     try! realm.write {
                         realm.add(realmObject, update: true)
                         pk = realmObject.primaryKey
                     }
                 }
-                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap, object: object))
-            } else if let parsedObject = Mapper<T>().map(JSONToMap) {
-                var pk: AnyObject?
+                return .success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap as Any!, object: object) as! Value)
+            } else if let parsedObject = Mapper<Value>(context: context).map(JSONObject: JSONToMap){
+                var pk: Any?
                 if let realmObject = parsedObject as? Object {
                     try! realm.write {
                         pk = realmObject.primaryKey
                         realm.add(realmObject, update: pk != nil)
                     }
                 }
-                return .Success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap, object: parsedObject))
+                return .success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap as AnyObject!, object: parsedObject) as! Value)
             }
 
             let failureReason = "ObjectMapper failed to serialize response."
-            let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
-            return .Failure(error)
+            let error = newError(.dataSerializationFailed, failureReason: failureReason)
+            return .failure(error)
         }
     }
 
@@ -118,52 +131,53 @@ extension Request {
 
      - returns: The request.
      */
-
-    public func responseRealmObject<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, mapToObject object: T? = nil, completionHandler: Response<RealmObjectMapperResult<T>, NSError> -> Void) -> Self {
-        return response(queue: queue, responseSerializer: Request.RealmObjectMapperSerializer(keyPath, mapToObject: object), completionHandler: completionHandler)
+    @discardableResult
+    public func responseRealmObject<Value: BaseMappable>(queue: DispatchQueue? = nil, keyPath: String? = nil, mapToObject object: Value? = nil, context: MapContext? = nil, completionHandler: @escaping (DataResponse<Value>) -> Void) -> Self {
+        return response(queue: queue, responseSerializer: DataRequest.ObjectMapperSerializer(keyPath, mapToObject: object, context: context), completionHandler: completionHandler)
     }
 
-    public static func RealmObjectMapperArraySerializer<T: Mappable>(keyPath: String?) -> ResponseSerializer<[RealmObjectMapperResult<T>], NSError> {
-        return ResponseSerializer { request, response, data, error in
+    public static func RealmObjectMapperArraySerializer<Value: BaseMappable>(_ keyPath: String?, context: MapContext? = nil) -> DataResponseSerializer<[Value]> {
+        return DataResponseSerializer { request, response, data, error in
             guard error == nil else {
-                return .Failure(error!)
+                return .failure(error!)
             }
 
             guard let _ = data else {
                 let failureReason = "Data could not be serialized. Input data was nil."
-                let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
-                return .Failure(error)
+                let error = newError(.dataSerializationFailed, failureReason: failureReason)
+                return .failure(error)
             }
 
-            let JSONResponseSerializer = Request.JSONResponseSerializer(options: .AllowFragments)
-            let result = JSONResponseSerializer.serializeResponse(request, response, data, error)
+            let jsonResponseSerializer = DataRequest.jsonResponseSerializer(options: .allowFragments)
+            let result = jsonResponseSerializer.serializeResponse(request, response, data, error)
 
-            let JSONToMap: AnyObject?
-            if let keyPath = keyPath where keyPath.isEmpty == false {
-                JSONToMap = result.value?.valueForKeyPath(keyPath)
+            let JSONToMap: Any?
+            if let keyPath = keyPath, keyPath.isEmpty == false {
+                JSONToMap = (result.value as? NSDictionary)?.value(forKeyPath: keyPath)
             } else {
                 JSONToMap = result.value
             }
 
             let realm = try! Realm()
-            if let parsedObject = Mapper<T>().mapArray(JSONToMap) {
-                var results = [RealmObjectMapperResult<T>]()
+            if let parsedObject = Mapper<Value>(context: context).mapArray(JSONObject: JSONToMap){
+                var results = [RealmObjectMapperResult<Value>]()
                 try! realm.write {
-                    results = parsedObject.enumerate().map {
-                        var pk: AnyObject?
+                    results = parsedObject.enumerated().map {
+                        var pk: Any?
                         let object = $0.element
                         if let realmObject = object as? Object {
                             pk = realmObject.primaryKey
                             realm.add(realmObject, update: pk != nil)
                         }
-                        return RealmObjectMapperResult(primaryKey: pk, json: JSONToMap?[$0.index], object: object)
+                        return RealmObjectMapperResult(primaryKey: pk, json: (JSONToMap as? [Any])?[$0.offset], object: object)
                     }
                 }
-                return .Success(results)
+                return .success(parsedObject)
             }
+
             let failureReason = "ObjectMapper failed to serialize response."
-            let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
-            return .Failure(error)
+            let error = newError(.dataSerializationFailed, failureReason: failureReason)
+            return .failure(error)
         }
     }
 
@@ -176,7 +190,8 @@ extension Request {
 
      - returns: The request.
      */
-    public func responseRealmArray<T: Mappable>(queue queue: dispatch_queue_t? = nil, keyPath: String? = nil, completionHandler: Response<[RealmObjectMapperResult<T>], NSError> -> Void) -> Self {
-        return response(queue: queue, responseSerializer: Request.RealmObjectMapperArraySerializer(keyPath), completionHandler: completionHandler)
+    @discardableResult
+    public func responseRealmArray<T: BaseMappable>(queue: DispatchQueue? = nil, keyPath: String? = nil, context: MapContext? = nil, completionHandler: @escaping (DataResponse<[T]>) -> Void) -> Self {
+        return response(queue: queue, responseSerializer: DataRequest.RealmObjectMapperArraySerializer(keyPath, context: context), completionHandler: completionHandler)
     }
 }
