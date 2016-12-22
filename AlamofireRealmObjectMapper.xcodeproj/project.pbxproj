@@ -34,7 +34,6 @@
 		85F0EF931E0B7E53007B96E1 /* AlamofireRealmObjectMapper.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 85F0EF8A1E0B7E53007B96E1 /* AlamofireRealmObjectMapper.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		85F0EF9B1E0B7F87007B96E1 /* AlamofireRealmObjectMapper.h in Headers */ = {isa = PBXBuildFile; fileRef = 85F0EF981E0B7F87007B96E1 /* AlamofireRealmObjectMapper.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		85F0EF9C1E0B7F87007B96E1 /* AlamofireRealmObjectMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F0EF991E0B7F87007B96E1 /* AlamofireRealmObjectMapper.swift */; };
-		85F0EF9D1E0B7F87007B96E1 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 85F0EF9A1E0B7F87007B96E1 /* Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -290,7 +289,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				85F0EF9D1E0B7F87007B96E1 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

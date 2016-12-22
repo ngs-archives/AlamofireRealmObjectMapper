@@ -160,16 +160,16 @@ extension DataRequest {
 
             let realm = try! Realm()
             if let parsedObject = Mapper<Value>(context: context).mapArray(JSONObject: JSONToMap){
-                var results = [RealmObjectMapperResult<Value>]()
+                // var results = [RealmObjectMapperResult<Value>]()
                 try! realm.write {
-                    results = parsedObject.enumerated().map {
+                    parsedObject.enumerated().forEach {
                         var pk: Any?
                         let object = $0.element
                         if let realmObject = object as? Object {
                             pk = realmObject.primaryKey
                             realm.add(realmObject, update: pk != nil)
                         }
-                        return RealmObjectMapperResult(primaryKey: pk, json: (JSONToMap as? [Any])?[$0.offset], object: object)
+                        let _ = RealmObjectMapperResult(primaryKey: pk, json: (JSONToMap as? [Any])?[$0.offset], object: object)
                     }
                 }
                 return .success(parsedObject)
