@@ -89,7 +89,7 @@ extension DataRequest {
 
             let JSONToMap: Any?
             if let keyPath = keyPath , keyPath.isEmpty == false {
-                JSONToMap = nil // (result.value as Any?)?.value(forKeyPath: keyPath)
+                JSONToMap = (result.value as AnyObject).value(forKeyPath: keyPath)
             } else {
                 JSONToMap = result.value
             }
