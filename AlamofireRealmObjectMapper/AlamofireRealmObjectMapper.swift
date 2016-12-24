@@ -38,20 +38,21 @@ extension Object {
         }
         return nil
     }
-}
 
-public struct RealmObjectMapperResult<Value> {
-    public let primaryKey: Any?
-    public let json: Any!
-    public let object: Value!
-}
-
-extension RealmObjectMapperResult where Value: Object {
-    public var realmObject: Value? {
-        if let pk = primaryKey {
-            return try! Realm().object(ofType: Value.self, forPrimaryKey: pk)
+    public func clone() -> Object? {
+        let objectSchema = self.objectSchema
+        let bundle = Bundle(for: type(of: self))
+        guard let pkg = bundle.infoDictionary?["CFBundleName"] as? String else {
+            return nil
         }
-        return nil
+        guard let cls = bundle.classNamed("\(pkg).\(objectSchema.className)") as? Object.Type else {
+            return nil
+        }
+        let newObj = cls.init()
+        objectSchema.properties.forEach { prop in
+            newObj.setValue(self.value(forKey: prop.name), forKey: prop.name)
+        }
+        return newObj
     }
 }
 
@@ -96,14 +97,13 @@ extension DataRequest {
 
             if let object = object {
                 _ = Mapper<Value>().map(JSONObject: JSONToMap, toObject: object)
-                var pk: Any?
                 if let realmObject = object as? Object {
                     try! realm.write {
                         realm.add(realmObject, update: true)
-                        pk = realmObject.primaryKey
                     }
+                    return .success(realmObject.clone() as! Value)
                 }
-                return .success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap as Any!, object: object) as! Value)
+                return .success(object)
             } else if let parsedObject = Mapper<Value>(context: context).map(JSONObject: JSONToMap){
                 var pk: Any?
                 if let realmObject = parsedObject as? Object {
@@ -111,8 +111,9 @@ extension DataRequest {
                         pk = realmObject.primaryKey
                         realm.add(realmObject, update: pk != nil)
                     }
+                    return .success(realmObject.clone() as! Value)
                 }
-                return .success(RealmObjectMapperResult(primaryKey: pk, json: JSONToMap as AnyObject!, object: parsedObject) as! Value)
+                return .success(parsedObject)
             }
 
             let failureReason = "ObjectMapper failed to serialize response."
@@ -160,19 +161,20 @@ extension DataRequest {
 
             let realm = try! Realm()
             if let parsedObject = Mapper<Value>(context: context).mapArray(JSONObject: JSONToMap){
-                // var results = [RealmObjectMapperResult<Value>]()
+                var results = [Value]()
                 try! realm.write {
-                    parsedObject.enumerated().forEach {
+                    results = parsedObject.enumerated().map {
                         var pk: Any?
                         let object = $0.element
                         if let realmObject = object as? Object {
                             pk = realmObject.primaryKey
                             realm.add(realmObject, update: pk != nil)
+                            return realmObject.clone() as! Value
                         }
-                        let _ = RealmObjectMapperResult(primaryKey: pk, json: (JSONToMap as? [Any])?[$0.offset], object: object)
+                        return object
                     }
                 }
-                return .success(parsedObject)
+                return .success(results)
             }
 
             let failureReason = "ObjectMapper failed to serialize response."
